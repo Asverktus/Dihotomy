@@ -195,6 +195,7 @@ namespace Dihitomy
       area.AxisY.Title = "f(x)";
       area.AxisX.MajorGrid.LineColor = System.Drawing.Color.LightGray;
       area.AxisY.MajorGrid.LineColor = System.Drawing.Color.LightGray;
+      area.AxisY.IsStartedFromZero = false; 
       chartFunction.ChartAreas.Add(area);
 
       Series functionSeries = new Series("f(x)");
@@ -202,17 +203,30 @@ namespace Dihitomy
       functionSeries.Color = System.Drawing.Color.Blue;
       functionSeries.BorderWidth = 2;
 
-      int pointCount = 200;
+      double yLimit = 20;
+
+      int pointCount = 2000;
       double step = (b - a) / pointCount;
 
       for (int i = 0; i <= pointCount; i++)
       {
         double x = a + i * step;
-
         double y;
+
         if (TryEvaluate(formula, x, out y))
         {
-          functionSeries.Points.AddXY(x, y);
+          if (Math.Abs(y) <= yLimit)
+          {
+            functionSeries.Points.AddXY(x, y);
+          }
+          else
+          {
+            functionSeries.Points.AddXY(x, double.NaN);   
+          }
+        }
+        else
+        {
+          functionSeries.Points.AddXY(x, double.NaN);    
         }
       }
 
@@ -227,7 +241,10 @@ namespace Dihitomy
       double rootY;
       if (TryEvaluate(formula, root, out rootY))
       {
-        rootSeries.Points.AddXY(root, rootY);
+        if (Math.Abs(rootY) <= yLimit)
+        {
+          rootSeries.Points.AddXY(root, rootY);
+        }
       }
 
       chartFunction.Series.Add(rootSeries);
