@@ -14,9 +14,9 @@ namespace Dihitomy
       InitializeComponent();
     }
 
-    // ============ РАССЧИТАТЬ ============
     private void рассчитатьToolStripMenuItem_Click(object sender, EventArgs e)
     {
+      // 1. Сбор и проверка данных
       double a;
       double b;
       double epsilon;
@@ -65,76 +65,161 @@ namespace Dihitomy
         return;
       }
 
-      double fa;
-      double fb;
-
-      if (!TryEvaluate(formula, a, out fa))
+      // 2. Выбор метода
+      if (rbDichotomy.Checked)
       {
-        MessageBox.Show("Не удалось вычислить f(a). Проверьте формулу.", "Ошибка",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-        return;
-      }
+        double fa;
+        double fb;
 
-      if (!TryEvaluate(formula, b, out fb))
-      {
-        MessageBox.Show("Не удалось вычислить f(b). Проверьте формулу.", "Ошибка",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-        return;
-      }
-
-      if (fa * fb > 0)
-      {
-        MessageBox.Show("На этом интервале функция не меняет знак. f(a) и f(b) одного знака.",
-                        "Ошибка",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-        return;
-      }
-
-      double left = a;
-      double right = b;
-
-      while ((right - left) / 2.0 > epsilon)
-      {
-        double middle = (left + right) / 2.0;
-
-        double fm;
-        if (!TryEvaluate(formula, middle, out fm))
+        if (!TryEvaluate(formula, a, out fa))
         {
-          MessageBox.Show("Ошибка при вычислении f(x).", "Ошибка",
+          MessageBox.Show("Не удалось вычислить f(a). Проверьте формулу.", "Ошибка",
                           MessageBoxButtons.OK, MessageBoxIcon.Error);
           return;
         }
 
-        if (fa * fm < 0)
+        if (!TryEvaluate(formula, b, out fb))
         {
-          right = middle;
+          MessageBox.Show("Не удалось вычислить f(b). Проверьте формулу.", "Ошибка",
+                          MessageBoxButtons.OK, MessageBoxIcon.Error);
+          return;
+        }
+
+        if (fa * fb > 0)
+        {
+          MessageBox.Show("На этом интервале функция не меняет знак. f(a) и f(b) одного знака.",
+                          "Ошибка",
+                          MessageBoxButtons.OK, MessageBoxIcon.Error);
+          return;
+        }
+
+        double left = a;
+        double right = b;
+        double root = 0;
+        bool foundExact = false;
+
+        while ((right - left) / 2.0 > epsilon)
+        {
+          double middle = (left + right) / 2.0;
+
+          double fm;
+          if (!TryEvaluate(formula, middle, out fm))
+          {
+            MessageBox.Show("Ошибка при вычислении f(x).", "Ошибка",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+          }
+
+          if (Math.Abs(fm) < epsilon)
+          {
+            root = middle;
+            foundExact = true;
+            break;
+          }
+
+          if (fa * fm < 0)
+          {
+            right = middle;
+          }
+          else
+          {
+            left = middle;
+            fa = fm;
+          }
+        }
+
+        if (!foundExact)
+        {
+          root = (left + right) / 2.0;
+        }
+
+        double fRoot;
+        TryEvaluate(formula, root, out fRoot);
+
+        txtResult.Text =
+          "=== Результат (Дихотомия) ===\r\n" +
+          $"Формула: f(x) = {formula}\r\n" +
+          $"Интервал: [{a}; {b}]\r\n" +
+          $"Точность: {epsilon}\r\n" +
+          $"f(a) = {fa:F4}\r\n" +
+          $"f(b) = {fb:F4}\r\n" +
+          "\r\n" +
+          $"Корень: x = {root:F6}\r\n" +
+          $"f(x) = {fRoot:F6}\r\n" +
+          $"Проверка: |f(x)| ≤ e → {(Math.Abs(fRoot) <= epsilon ? "да" : "нет")}";
+
+        DrawChart(formula, a, b, root, "Корень");
+      }
+      else if (rbGolden.Checked)
+      {
+        FindMinimum(formula, a, b, epsilon);
+      }
+      else
+      {
+        MessageBox.Show("Выберите метод расчета.", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+      }
+    }
+
+    private void FindMinimum(string formula, double a, double b, double epsilon)
+    {
+      double phi = (1 + Math.Sqrt(5)) / 2.0;
+
+      double left = a;
+      double right = b;
+
+      double x1 = right - (right - left) / phi;
+      double x2 = left + (right - left) / phi;
+
+      double f1, f2;
+      if (!TryEvaluate(formula, x1, out f1) || !TryEvaluate(formula, x2, out f2))
+      {
+        MessageBox.Show("Ошибка при вычислении функции. Проверьте формулу.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        return;
+      }
+
+      while ((right - left) > epsilon)
+      {
+        if (f1 < f2)
+        {
+          right = x2;
+          x2 = x1;
+          f2 = f1;
+
+          x1 = right - (right - left) / phi;
+          if (!TryEvaluate(formula, x1, out f1)) return;
         }
         else
         {
-          left = middle;
+          left = x1;
+          x1 = x2;
+          f1 = f2;
+
+          x2 = left + (right - left) / phi;
+          if (!TryEvaluate(formula, x2, out f2)) return;
         }
       }
 
-      double root = (left + right) / 2.0;
-      double fRoot;
-      TryEvaluate(formula, root, out fRoot);
+      double xMin = (left + right) / 2.0;
+      double fMin;
+      if (!TryEvaluate(formula, xMin, out fMin))
+      {
+        MessageBox.Show("Ошибка вычисления в точке минимума.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        return;
+      }
 
       txtResult.Text =
-        "=== Результат ===\r\n" +
+        "=== Результат (Золотое сечение) ===\r\n" +
         $"Формула: f(x) = {formula}\r\n" +
         $"Интервал: [{a}; {b}]\r\n" +
         $"Точность: {epsilon}\r\n" +
-        $"f(a) = {fa:F4}\r\n" +
-        $"f(b) = {fb:F4}\r\n" +
         "\r\n" +
-        $"Корень: x = {root:F6}\r\n" +
-        $"f(x) = {fRoot:F6}\r\n" +
-        $"Проверка: |f(x)| ≤ e → {(Math.Abs(fRoot) <= epsilon ? "да" : "нет")}";
+        $"Точка минимума: x = {xMin:F6}\r\n" +
+        $"Минимальное значение: f(x) = {fMin:F6}\r\n" +
+        $"Финальный интервал: [{left:F6}; {right:F6}]\r\n";
 
-      DrawChart(formula, a, b, root);
+      DrawChart(formula, a, b, xMin, "Минимум");
     }
 
-    // ============ ОЧИСТИТЬ ============
     private void очиститьToolStripMenuItem_Click(object sender, EventArgs e)
     {
       txtA.Text = "";
@@ -148,19 +233,17 @@ namespace Dihitomy
       chartFunction.Titles.Clear();
     }
 
-    // ============ О ПРОГРАММЕ ============
     private void оПрограммеToolStripMenuItem_Click(object sender, EventArgs e)
     {
       MessageBox.Show(
-        "Лабораторная работа: метод половинного деления\r\n" +
-        "Поиск точки смены знака функции на интервале.\r\n" +
+        "Лабораторная работа: методы поиска\r\n" +
+        "Дихотомия и Золотое сечение.\r\n" +
         "© 2026",
         "О программе",
         MessageBoxButtons.OK,
         MessageBoxIcon.Information);
     }
 
-    // ============ ВЫЧИСЛЕНИЕ ФОРМУЛЫ ============
     private bool TryEvaluate(string formula, double x, out double result)
     {
       result = 0;
@@ -183,19 +266,19 @@ namespace Dihitomy
       }
     }
 
-    // ============ ГРАФИК ============
-    private void DrawChart(string formula, double a, double b, double root)
+    private void DrawChart(string formula, double a, double b, double pointX, string pointLabel)
     {
       chartFunction.Series.Clear();
       chartFunction.ChartAreas.Clear();
       chartFunction.Titles.Clear();
+      chartFunction.Legends.Clear();
 
       ChartArea area = new ChartArea("MainArea");
       area.AxisX.Title = "x";
       area.AxisY.Title = "f(x)";
       area.AxisX.MajorGrid.LineColor = System.Drawing.Color.LightGray;
       area.AxisY.MajorGrid.LineColor = System.Drawing.Color.LightGray;
-      area.AxisY.IsStartedFromZero = false; 
+      area.AxisY.IsStartedFromZero = false;
       chartFunction.ChartAreas.Add(area);
 
       Series functionSeries = new Series("f(x)");
@@ -221,34 +304,34 @@ namespace Dihitomy
           }
           else
           {
-            functionSeries.Points.AddXY(x, double.NaN);   
+            functionSeries.Points.AddXY(x, double.NaN);
           }
         }
         else
         {
-          functionSeries.Points.AddXY(x, double.NaN);    
+          functionSeries.Points.AddXY(x, double.NaN);
         }
       }
 
       chartFunction.Series.Add(functionSeries);
 
-      Series rootSeries = new Series("Корень");
+      Series rootSeries = new Series(pointLabel);
       rootSeries.ChartType = SeriesChartType.Point;
       rootSeries.Color = System.Drawing.Color.Red;
       rootSeries.MarkerStyle = MarkerStyle.Circle;
       rootSeries.MarkerSize = 12;
 
       double rootY;
-      if (TryEvaluate(formula, root, out rootY))
+      if (TryEvaluate(formula, pointX, out rootY))
       {
         if (Math.Abs(rootY) <= yLimit)
         {
-          rootSeries.Points.AddXY(root, rootY);
+          rootSeries.Points.AddXY(pointX, rootY);
         }
       }
 
       chartFunction.Series.Add(rootSeries);
-      chartFunction.Titles.Add($"f(x) = {formula}, корень при x = {root:F4}");
+      chartFunction.Titles.Add($"f(x) = {formula}, {pointLabel} при x = {pointX:F4}");
     }
 
     private void выходToolStripMenuItem_Click(object sender, EventArgs e)

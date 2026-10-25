@@ -50,6 +50,8 @@
       txtE = new TextBox();
       txtFunction = new TextBox();
       txtResult = new TextBox();
+      rbDichotomy = new RadioButton();
+      rbGolden = new RadioButton();
       ((System.ComponentModel.ISupportInitialize)chartFunction).BeginInit();
       menuStrip1.SuspendLayout();
       SuspendLayout();
@@ -90,7 +92,7 @@
       // выходToolStripMenuItem
       // 
       выходToolStripMenuItem.Name = "выходToolStripMenuItem";
-      выходToolStripMenuItem.Size = new Size(180, 22);
+      выходToolStripMenuItem.Size = new Size(109, 22);
       выходToolStripMenuItem.Text = "Выход";
       выходToolStripMenuItem.Click += выходToolStripMenuItem_Click;
       // 
@@ -211,11 +213,35 @@
       txtResult.Size = new Size(700, 150);
       txtResult.TabIndex = 11;
       // 
+      // rbDichotomy
+      // 
+      rbDichotomy.AutoSize = true;
+      rbDichotomy.Checked = true;
+      rbDichotomy.Location = new Point(59, 86);
+      rbDichotomy.Name = "rbDichotomy";
+      rbDichotomy.Size = new Size(167, 19);
+      rbDichotomy.TabIndex = 12;
+      rbDichotomy.TabStop = true;
+      rbDichotomy.Text = "Поиск корня (дихотомия)";
+      rbDichotomy.UseVisualStyleBackColor = true;
+      // 
+      // rbGolden
+      // 
+      rbGolden.AutoSize = true;
+      rbGolden.Location = new Point(233, 86);
+      rbGolden.Name = "rbGolden";
+      rbGolden.Size = new Size(226, 19);
+      rbGolden.TabIndex = 13;
+      rbGolden.Text = "Поиск минимума (золотое сечение)";
+      rbGolden.UseVisualStyleBackColor = true;
+      // 
       // Form1
       // 
       AutoScaleDimensions = new SizeF(7F, 15F);
       AutoScaleMode = AutoScaleMode.Font;
       ClientSize = new Size(984, 761);
+      Controls.Add(rbGolden);
+      Controls.Add(rbDichotomy);
       Controls.Add(txtResult);
       Controls.Add(txtFunction);
       Controls.Add(txtE);
@@ -259,5 +285,7 @@
     private TextBox txtFunction;
     private TextBox txtResult;
     private ToolStripMenuItem выходToolStripMenuItem;
+    private RadioButton rbDichotomy;
+    private RadioButton rbGolden;
   }
 }
